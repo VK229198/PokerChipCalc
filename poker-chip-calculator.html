@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Poker Chip Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --green: #1a3a2a;
+    --green-mid: #2e6048;
+    --green-light: #3d7a5c;
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --cream: #f5f0e8;
+    --cream-dark: #e8e0d0;
+    --red: #c0392b;
+    --text: #1a1a1a;
+    --text-muted: #5a5a5a;
+    --card-bg: #ffffff;
+    --border: #d0c8b8;
+    --chip-colors: #e74c3c, #3498db, #2ecc71, #f39c12, #9b59b6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--green);
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(61,122,92,0.3) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(46,96,72,0.4) 0%, transparent 50%);
+    min-height: 100vh;
+    color: var(--text);
+    padding: 0 0 4rem;
+  }
+  header {
+    background: rgba(10,26,18,0.95);
+    border-bottom: 2px solid var(--gold);
+    padding: 1.2rem 1.5rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    color: var(--gold-light);
+    font-size: clamp(1.3rem, 4vw, 1.8rem);
+    letter-spacing: 0.04em;
+  }
+  header p {
+    color: rgba(201,168,76,0.6);
+    font-size: 0.72rem;
+    margin-top: 2px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .tab-bar {
+    display: flex;
+    background: rgba(10,26,18,0.8);
+    border-bottom: 1px solid rgba(201,168,76,0.3);
+    padding: 0 1rem;
+    gap: 0;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 0.85rem 0.5rem;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: rgba(201,168,76,0.5);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .tab-btn.active {
+    color: var(--gold-light);
+    border-bottom-color: var(--gold);
+  }
+  .tab-btn:hover:not(.active) { color: var(--gold); }
+
+  .view { display: none; padding: 1.2rem; max-width: 600px; margin: 0 auto; }
+  .view.active { display: block; }
+
+  .card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .card-title {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--green-mid);
+    font-weight: 500;
+    margin-bottom: 1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--cream-dark);
+  }
+
+  label {
+    display: block;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.35rem;
+    margin-top: 0.9rem;
+  }
+  label:first-of-type { margin-top: 0; }
+
+  input[type="number"], input[type="text"] {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.95rem;
+    background: var(--cream);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type="number"]:focus, input[type="text"]:focus {
+    border-color: var(--green-mid);
+  }
+
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 0.85rem;
+    background: var(--green-mid);
+    color: var(--gold-light);
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-top: 1.2rem;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .btn:hover { background: var(--green-light); }
+  .btn:active { transform: scale(0.98); }
+  .btn.danger { background: #922b21; }
+  .btn.danger:hover { background: var(--red); }
+  .btn.small {
+    width: auto;
+    display: inline-block;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.7rem;
+    margin-top: 0;
+  }
+
+  .chip-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 8px;
+    align-items: end;
+    margin-bottom: 0.6rem;
+  }
+  .chip-swatch {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid rgba(0,0,0,0.15);
+    flex-shrink: 0;
+    display: inline-block;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .remove-btn {
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    width: 34px;
+    height: 34px;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    align-self: flex-end;
+  }
+  .remove-btn:hover { background: #fde8e8; border-color: var(--red); color: var(--red); }
+
+  .result-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+  }
+  .result-table th {
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid var(--cream-dark);
+  }
+  .result-table td {
+    padding: 0.55rem 0.5rem;
+    border-bottom: 1px solid var(--cream-dark);
+    font-size: 0.88rem;
+  }
+  .result-table tr:last-child td { border-bottom: none; }
+  .result-table .total-row td {
+    font-weight: 500;
+    background: var(--cream);
+    border-top: 1.5px solid var(--border);
+    border-bottom: none;
+  }
+  .result-table .chip-val { font-weight: 500; }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 1rem;
+  }
+  .summary-box {
+    background: var(--cream);
+    border-radius: 8px;
+    padding: 0.75rem;
+    text-align: center;
+  }
+  .summary-box .label {
+    font-size: 0.67rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+  .summary-box .value {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--green-mid);
+  }
+
+  .alert {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    margin-top: 0.8rem;
+    line-height: 1.5;
+  }
+  .alert.warn { background: #fef9e7; border: 1px solid #f1c40f; color: #7d6608; }
+  .alert.success { background: #eafaf1; border: 1px solid #2ecc71; color: #1d6a3a; }
+  .alert.error { background: #fdecea; border: 1px solid #e74c3c; color: #922b21; }
+  .alert.info { background: #eaf4fb; border: 1px solid #3498db; color: #1a5276; }
+
+  .player-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 8px;
+    align-items: end;
+    margin-bottom: 0.6rem;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--cream-dark);
+    margin: 1rem 0;
+  }
+
+  .known-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    padding: 0.4rem 0;
+  }
+  .known-total-row .k-label { color: var(--text-muted); }
+  .known-total-row .k-val { font-weight: 500; }
+  .known-total-row .k-val.pos { color: #1d6a3a; }
+  .known-total-row .k-val.neg { color: #922b21; }
+  .known-total-row .k-val.neutral { color: var(--green-mid); }
+
+  .big-result {
+    text-align: center;
+    padding: 1.5rem 1rem;
+  }
+  .big-result .br-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .big-result .br-val {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.4rem;
+    color: var(--green-mid);
+  }
+  .big-result .br-val.pos { color: #1d6a3a; }
+  .big-result .br-val.neg { color: #922b21; }
+  .big-result .br-sub {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+
+  .chip-circle-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 0.5rem 0;
+  }
+  .chip-circle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+  .chip-circle .disk {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 3px solid rgba(0,0,0,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    flex-shrink: 0;
+  }
+  .chip-circle .qty { font-weight: 500; color: var(--text); }
+  .chip-circle .denom { color: var(--text-muted); }
+
+  .section-note {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-top: 0.3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  @media (max-width: 480px) {
+    .view { padding: 0.9rem; }
+    .card { padding: 1rem; }
+    .chip-row { grid-template-columns: 1fr 1fr auto; gap: 6px; }
+    .player-row { grid-template-columns: 1fr 1fr auto; gap: 6px; }
+    .summary-grid { grid-template-columns: 1fr 1fr; }
+    .big-result .br-val { font-size: 1.9rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>♠ Poker Chip Calc</h1>
+  <p>Male Ego</p>
+</header>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('distribute')">Distribute</button>
+  <button class="tab-btn" onclick="switchTab('chips')">Chip Setup</button>
+  <button class="tab-btn" onclick="switchTab('endgame')">End Game</button>
+</div>
+
+<!-- ===== CHIP SETUP TAB ===== -->
+<div id="tab-chips" class="view">
+  <div class="card">
+    <div class="card-title">Chip Denominations &amp; Counts</div>
+    <p class="section-note">Set your chip denominations and how many chips you own of each. These are saved for this session.</p>
+    <div id="chip-list"></div>
+    <button class="btn small" onclick="addChip()" style="margin-top:0.8rem;">+ Add denomination</button>
+  </div>
+  <button class="btn" onclick="saveChips()">Save Chip Setup</button>
+  <div id="chip-save-msg"></div>
+</div>
+
+<!-- ===== DISTRIBUTE TAB ===== -->
+<div id="tab-distribute" class="view active">
+  <div class="card">
+    <div class="card-title">Game Setup</div>
+    <label>Number of Players</label>
+    <input type="number" id="num-players" min="2" max="20" value="6" placeholder="e.g. 6"/>
+    <label>Buy-in per Player (₹)</label>
+    <input type="number" id="buyin" min="1" value="500" placeholder="e.g. 500"/>
+  </div>
+
+  <button class="btn" onclick="calcDistribution()">Calculate Distribution</button>
+
+  <div id="dist-result" style="margin-top:1rem;"></div>
+</div>
+
+<!-- ===== END GAME TAB ===== -->
+<div id="tab-endgame" class="view">
+  <div class="card">
+    <div class="card-title">Total Buy-ins</div>
+    <label>Total buy-ins made (including re-buys)</label>
+    <input type="number" id="total-buyins" min="1" value="" placeholder="e.g. 8"/>
+    <label>Buy-in amount per player (₹)</label>
+    <input type="number" id="eg-buyin" min="1" value="500" placeholder="e.g. 500"/>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Players with known results</div>
+    <p class="section-note">Enter profit (+) or loss (−) in ₹ for players whose chips you've counted. Leave out players still counting.</p>
+    <div id="player-list"></div>
+    <button class="btn small" onclick="addPlayer()" style="margin-top:0.8rem;">+ Add player</button>
+  </div>
+
+  <button class="btn" onclick="calcEndGame()">Calculate remaining</button>
+
+  <div id="eg-result" style="margin-top:1rem;"></div>
+</div>
+
+<script>
+const CHIP_COLORS = ['#e74c3c','#3498db','#27ae60','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e63'];
+let chips = [
+  { denom: 1, count: 100, color: '#e74c3c' },
+  { denom: 5, count: 100, color: '#3498db' },
+  { denom: 10, count: 100, color: '#27ae60' },
+  { denom: 25, count: 50, color: '#f39c12' },
+  { denom: 100, count: 20, color: '#9b59b6' }
+];
+
+let playerCount = 2;
+
+function switchTab(tab) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function renderChipList() {
+  const el = document.getElementById('chip-list');
+  el.innerHTML = chips.map((c, i) => `
+    <div class="chip-row" id="chip-row-${i}">
+      <div>
+        <label style="margin-top:0">Denomination (₹)</label>
+        <input type="number" min="1" value="${c.denom}" onchange="chips[${i}].denom=+this.value" style="padding-right:0.4rem"/>
+      </div>
+      <div>
+        <label style="margin-top:0">Total chips owned</label>
+        <input type="number" min="0" value="${c.count}" onchange="chips[${i}].count=+this.value"/>
+      </div>
+      <button class="remove-btn" onclick="removeChip(${i})" title="Remove">✕</button>
+    </div>
+  `).join('');
+}
+
+function addChip() {
+  const color = CHIP_COLORS[chips.length % CHIP_COLORS.length];
+  chips.push({ denom: 1, count: 50, color });
+  renderChipList();
+}
+
+function removeChip(i) {
+  if (chips.length <= 1) return;
+  chips.splice(i, 1);
+  renderChipList();
+}
+
+function saveChips() {
+  chips.sort((a, b) => a.denom - b.denom);
+  renderChipList();
+  const msg = document.getElementById('chip-save-msg');
+  msg.innerHTML = '<div class="alert success">Chip setup saved! Switch to Distribute or End Game.</div>';
+  setTimeout(() => msg.innerHTML = '', 3000);
+}
+
+function calcDistribution() {
+  const players = parseInt(document.getElementById('num-players').value);
+  const buyin = parseFloat(document.getElementById('buyin').value);
+  const el = document.getElementById('dist-result');
+
+  if (!players || players < 2) { el.innerHTML = '<div class="alert error">Enter at least 2 players.</div>'; return; }
+  if (!buyin || buyin <= 0) { el.innerHTML = '<div class="alert error">Enter a valid buy-in amount.</div>'; return; }
+  if (chips.length === 0) { el.innerHTML = '<div class="alert error">Set up your chips in the Chip Setup tab first.</div>'; return; }
+
+  const sortedChips = [...chips].sort((a, b) => a.denom - b.denom);
+  const totalPool = buyin * players;
+
+  const perPlayer = distributeChips(buyin, players, sortedChips);
+
+  if (!perPlayer) {
+    el.innerHTML = '<div class="alert error">Cannot distribute chips evenly with these denominations. Try adjusting your chip setup or buy-in amount.</div>';
+    return;
+  }
+
+  const totalChipsUsed = {};
+  sortedChips.forEach(c => totalChipsUsed[c.denom] = 0);
+  perPlayer.forEach(({ denom, qty }) => totalChipsUsed[denom] = (totalChipsUsed[denom] || 0) + qty * players);
+
+  let overflowWarning = '';
+  for (const c of sortedChips) {
+    if (totalChipsUsed[c.denom] > c.count) {
+      overflowWarning += `<br>• ₹${c.denom} chips needed: ${totalChipsUsed[c.denom]}, you own: ${c.count}`;
+    }
+  }
+
+  const chipCircles = sortedChips.map(c => {
+    const entry = perPlayer.find(x => x.denom === c.denom);
+    const qty = entry ? entry.qty : 0;
+    if (qty === 0) return '';
+    return `<div class="chip-circle">
+      <div class="disk" style="background:${c.color}">₹${c.denom}</div>
+      <span class="qty">${qty}</span>
+      <span class="denom">chips</span>
+    </div>`;
+  }).join('');
+
+  const tableRows = perPlayer.filter(x => x.qty > 0).map(({ denom, qty }) => {
+    const chip = sortedChips.find(c => c.denom === denom);
+    return `<tr>
+      <td class="chip-val"><span class="chip-swatch" style="background:${chip ? chip.color : '#ccc'}"></span>₹${denom}</td>
+      <td>${qty}</td>
+      <td>₹${(qty * denom).toLocaleString('en-IN')}</td>
+      <td>${totalChipsUsed[denom]}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-title">Distribution per player</div>
+      <div class="summary-grid">
+        <div class="summary-box"><div class="label">Players</div><div class="value">${players}</div></div>
+        <div class="summary-box"><div class="label">Buy-in</div><div class="value">₹${buyin.toLocaleString('en-IN')}</div></div>
+        <div class="summary-box"><div class="label">Chips/player</div><div class="value">${perPlayer.reduce((s,x)=>s+x.qty,0)}</div></div>
+        <div class="summary-box"><div class="label">Total pool</div><div class="value">₹${totalPool.toLocaleString('en-IN')}</div></div>
+      </div>
+      <div class="chip-circle-row">${chipCircles}</div>
+      <table class="result-table">
+        <thead><tr><th>Chip</th><th>Qty / player</th><th>Value</th><th>Total chips</th></tr></thead>
+        <tbody>${tableRows}</tbody>
+        <tfoot><tr class="total-row"><td>Total</td><td>${perPlayer.reduce((s,x)=>s+x.qty,0)}</td><td>₹${buyin.toLocaleString('en-IN')}</td><td>${Object.values(totalChipsUsed).reduce((a,b)=>a+b,0)}</td></tr></tfoot>
+      </table>
+      ${overflowWarning ? `<div class="alert warn">Not enough chips for some denominations:${overflowWarning}<br><br>Consider reducing players, adjusting buy-in, or getting more chips.</div>` : '<div class="alert success">All chip counts are sufficient for this setup.</div>'}
+    </div>
+  `;
+}
+
+function distributeChips(buyin, players, sortedChips) {
+  // Greedy: maximize small denomination chips first, ensure each player gets exact buyin value
+  // Strategy: for each denom from smallest to largest, give as many as possible
+  // while leaving room for remaining denominations to round up to buyin
+  const result = [];
+  let remaining = buyin;
+
+  for (let i = 0; i < sortedChips.length; i++) {
+    const { denom, count } = sortedChips[i];
+    const maxPerPlayer = Math.floor(count / players);
+
+    if (i === sortedChips.length - 1) {
+      // Last denomination: must account for exactly remaining
+      if (remaining % denom !== 0) return null;
+      const needed = remaining / denom;
+      if (needed > maxPerPlayer) return null;
+      result.push({ denom, qty: needed });
+      remaining = 0;
+    } else {
+      // Give as many small chips as possible, keeping remaining divisible by something useful
+      // Figure out if higher denoms can cover any remainder
+      const higherDenoms = sortedChips.slice(i+1).map(c => c.denom);
+      const minHigher = Math.min(...higherDenoms);
+
+      // Max qty: use as many as possible while remaining >= 0 and remaining divisible by minHigher
+      let qty = Math.min(maxPerPlayer, Math.floor(remaining / denom));
+      // Reduce qty until remaining - qty*denom is divisible by minHigher
+      while (qty >= 0 && (remaining - qty * denom) % minHigher !== 0) qty--;
+      if (qty < 0) return null;
+      if (qty > 0) result.push({ denom, qty });
+      remaining -= qty * denom;
+      if (remaining === 0) break;
+    }
+  }
+
+  if (remaining !== 0) return null;
+  return result;
+}
+
+// END GAME
+function renderPlayerList() {
+  const el = document.getElementById('player-list');
+  el.innerHTML = Array.from({length: playerCount}, (_, i) => `
+    <div class="player-row">
+      <div>
+        <label style="margin-top:0">Player ${i+1} name</label>
+        <input type="text" id="pname-${i}" placeholder="Optional"/>
+      </div>
+      <div>
+        <label style="margin-top:0">P&amp;L (₹)</label>
+        <input type="number" id="ppl-${i}" placeholder="+200 or -150"/>
+      </div>
+      <button class="remove-btn" onclick="removePlayer(${i})" title="Remove">✕</button>
+    </div>
+  `).join('');
+}
+
+function addPlayer() {
+  playerCount++;
+  renderPlayerList();
+}
+
+function removePlayer(i) {
+  if (playerCount <= 1) return;
+  playerCount--;
+  renderPlayerList();
+}
+
+function calcEndGame() {
+  const totalBuyins = parseInt(document.getElementById('total-buyins').value);
+  const buyinAmt = parseFloat(document.getElementById('eg-buyin').value);
+  const el = document.getElementById('eg-result');
+
+  if (!totalBuyins || totalBuyins < 1) { el.innerHTML = '<div class="alert error">Enter total number of buy-ins.</div>'; return; }
+  if (!buyinAmt || buyinAmt <= 0) { el.innerHTML = '<div class="alert error">Enter buy-in amount.</div>'; return; }
+
+  const totalPot = totalBuyins * buyinAmt;
+
+  let knownPL = 0;
+  let knownCount = 0;
+  const playerResults = [];
+
+  for (let i = 0; i < playerCount; i++) {
+    const nameEl = document.getElementById(`pname-${i}`);
+    const plEl = document.getElementById(`ppl-${i}`);
+    if (!plEl) continue;
+    const val = plEl.value.trim();
+    if (val === '' || val === null) continue;
+    const pl = parseFloat(val);
+    if (isNaN(pl)) continue;
+    const name = nameEl.value.trim() || `Player ${i+1}`;
+    playerResults.push({ name, pl });
+    knownPL += pl;
+    knownCount++;
+  }
+
+  if (knownCount === 0) { el.innerHTML = '<div class="alert error">Enter at least one player\'s P&L.</div>'; return; }
+
+  // In a zero-sum game: sum of all P&L = 0
+  // knownPL + unknownPL = 0 → unknownPL = -knownPL
+  const unknownPL = -knownPL;
+
+  // Cross-check: each player starts with their buy-in(s). Total money in = totalPot.
+  // Total money out = totalPot (zero sum). So sum of final amounts = totalPot.
+  // Known final amounts = buyinAmt + pl each (assuming 1 buy-in; if more we don't know per-person)
+  const knownFinalSum = playerResults.reduce((s, p) => s + buyinAmt + p.pl, 0);
+  const unknownFinalSum = totalPot - knownFinalSum;
+
+  let rows = playerResults.map(p => {
+    const finalAmt = buyinAmt + p.pl;
+    const sign = p.pl > 0 ? '+' : '';
+    return `<tr>
+      <td>${p.name}</td>
+      <td style="color:${p.pl>=0?'#1d6a3a':'#922b21'}">${sign}₹${Math.abs(p.pl).toLocaleString('en-IN')}</td>
+      <td>₹${finalAmt.toLocaleString('en-IN')}</td>
+    </tr>`;
+  }).join('');
+
+  const sign = unknownPL >= 0 ? '+' : '−';
+  const absUnknown = Math.abs(unknownPL);
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-title">End game summary</div>
+      <div class="summary-grid">
+        <div class="summary-box"><div class="label">Total pot</div><div class="value">₹${totalPot.toLocaleString('en-IN')}</div></div>
+        <div class="summary-box"><div class="label">Players counted</div><div class="value">${knownCount}</div></div>
+      </div>
+      <table class="result-table">
+        <thead><tr><th>Player</th><th>P&amp;L</th><th>Final chips (₹)</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="divider"></div>
+      <div class="known-total-row">
+        <span class="k-label">Sum of known P&amp;Ls</span>
+        <span class="k-val ${knownPL>0?'pos':knownPL<0?'neg':'neutral'}">${knownPL>=0?'+':'−'}₹${Math.abs(knownPL).toLocaleString('en-IN')}</span>
+      </div>
+      <div class="known-total-row">
+        <span class="k-label">Known final chip value</span>
+        <span class="k-val neutral">₹${knownFinalSum.toLocaleString('en-IN')}</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Remaining players (uncounted)</div>
+      <div class="big-result">
+        <div class="br-label">Combined P&amp;L of all uncounted players</div>
+        <div class="br-val ${unknownPL>=0?'pos':'neg'}">${sign} ₹${absUnknown.toLocaleString('en-IN')}</div>
+        <div class="br-sub">Their chips should total ₹${unknownFinalSum.toLocaleString('en-IN')} combined</div>
+      </div>
+      <div class="alert info">This is calculated from the zero-sum principle: every rupee won equals a rupee lost. If the sum doesn't add up after counting, someone miscounted or there were extra buy-ins not entered above.</div>
+    </div>
+  `;
+}
+
+renderChipList();
+renderPlayerList();
+</script>
+</body>
+</html>
