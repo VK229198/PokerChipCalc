@@ -8,8 +8,8 @@
 - Specify the number of players and buyin for each player ( The website doesn't account for different buy-in amounts yet)
 - Calculate the Distribution and have fun!!
 - In the end of the game:
--   In case of any chip count discripancies, you can go to the End Game tab
--   Enter number of players, and total buy in made.
--   Enter the profit and loss of how many ever players you are certain about
--   The app will tell you the remaining amount.
+  - In case of any chip count discripancies, you can go to the End Game tab
+  - Enter number of players, and total buy in made.
+  - Enter the profit and loss of how many ever players you are certain about
+  - The app will tell you the remaining amount.
 
